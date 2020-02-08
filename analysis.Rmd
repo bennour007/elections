@@ -1,0 +1,169 @@
+---
+title: "Modeling"
+author: "Bennour Mohamed Hsin"
+date: "10 January 2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+#library(caret)
+#library(electoral)
+```
+
+I will upload all the data sets from my github repository into this work environment. The same date exist in my local machine, reproducibility is not going to be my priority (for now).
+
+```{r}
+path <- "~/Projects/elections/final_data"
+files <- list.files(path,full.names = T) %>% as.list()
+names <- list.files(path)
+
+data <- lapply(files, read_csv)
+  
+```
+
+
+```{r}
+# create names vector of the constituances
+vec_clean_names <- names %>% 
+  str_remove(".csv")
+list_clean_names <- vec_clean_names %>% as.list()
+
+# assign the names to the list of data
+names(data) <- vec_clean_names
+```
+
+I believe I should remove all the rows that contain the sums of columns, 
+
+```{r}
+damdam <- function(x){
+  if(x[nrow(x),ncol(x)-1] == sum(x[nrow(x), ncol(x)-1])){
+    x <- x[-nrow(x),]
+  }
+}
+
+data_1 <- lapply(data, damdam)
+
+new_path <- "~/Projects/elections/super_final_data/"
+paste(new_path, list_clean_names[[1]], ".csv", sep = "")
+
+for(i in 1:27){
+  data_1[[i]] %>%
+    write_csv(paste(new_path, list_clean_names[[i]], ".csv", sep = ""))
+}
+``` 
+
+
+```{r}
+#number of seats for each constituance
+s <- c(8,6,10,9,7,7,8,9,8,5,7,6,8,9,9,7,6,7,9,8,6,10,4,4,9,8,5) 
+```
+
+
+```{r}
+# sum all votes for each list in each constituance
+hor_wize <- function(x){
+  l <- ncol(x)
+  x %>% 
+    mutate(list_total = rowSums(x[,-l])) %>%
+    select(list_total, list) %>%
+    return()
+}
+
+sumlist <- lapply(data_1, hor_wize) %>% lapply(., as_tibble)
+names(sumlist) <- vec_clean_names
+```
+
+```{r}
+total <- lapply(sumlist, select, "list_total") %>% lapply(., pull)  
+
+parties_num <- vector('list', 27) 
+names(parties_num) <- vec_clean_names
+num <- lapply(total, length)
+
+for(i in 1:27){
+  parties_num[[i]] <-  tibble(list_number = c(1:num[[i]])) %>%
+    mutate(list_number = as.character(list_number))
+}
+
+lists <- lapply(sumlist, select, "list") %>% map2(., parties_num, bind_cols) 
+```
+
+I probably should store the list in seperate vectors each, than loop on these vectors names and do the calculations than store them to a list.
+
+
+```{r}
+library(electoral)
+```
+
+```{r}
+funk <- function(){
+  v <- vector("list",27)
+  names(v) <- vec_clean_names
+  for(i in 1:27){
+    v[[i]] <- seats_lr(parties = parties_num[[i]], votes = total[[i]], n_seats = s[i], method = 'hare') %>% 
+      enframe(name = NULL) %>%
+      rowid_to_column() %>%
+      filter(value > 0)
+  }
+  return(v)
+}
+
+results <- funk()
+
+```
+
+
+```{r}
+
+fnac <- function(l, r){
+  l %>%
+    filter(list_number %in% r %>% select(rowid)) %>%
+    return()
+}
+
+res_2 <- vector("list", 27)
+
+
+
+```
+
+the main lists I work with now are 
+
+```{r}
+results
+lists
+```
+
+```{r}
+ahla <- function(l, x){
+  l %>%
+    filter(list_number %in% x$rowid) %>%
+    select(-list_number) %>%
+    return()
+}
+
+seated_lists <- map2(lists, results, ahla)
+
+sapply(results, nrow)
+sapply(seated_lists, nrow)
+```
+
+```{r}
+results[[4]] %>%
+ bind_cols(seated_lists[[4]])
+```
+
+
+
+
+
+
+
+

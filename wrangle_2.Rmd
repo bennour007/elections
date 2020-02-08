@@ -1,0 +1,320 @@
+---
+title: "wrangle_2"
+author: "BMH"
+date: "3 December 2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(rlist)
+```
+
+```{r}
+p <- "~/Rprojects/elections/raw_csv/"
+files_names <- list.files(p)
+files_full <- list.files(p, full.names = T)
+
+files <- files_names %>% as.list()
+# ica make this more elegent
+for(n in 1:length(files)){
+  files[n] <- str_remove(files_names[n], "tabula-" ) %>% 
+    str_remove(".csv")
+}
+
+tables <- lapply(files_full, read_csv)
+names(tables) <- files
+
+```
+
+
+```{r}
+tables$`bizerte*` %>% view
+```
+
+```{r}
+# no_empty function to remove empty rows and columns
+
+no_empty <- function(x,n){
+  #x being the tiblle
+  #n being the number of top rows to remove (garbage header)
+  x %>% 
+    remove_empty(c("cols", "rows")) %>%
+    slice(n+1:n()) %>%
+    return()
+}
+
+# les_names to set the names of the tibble to one of the rows, always after trimming with trem()
+
+les_names <- function(x,u){
+  #x is the tibble
+  #u is the number of rows that contains the row names.
+  colnames(x) <- x[u,]
+  colnames(x)[ncol(x)] <- "list"
+  x <- x[-u,]
+  return(x)
+}
+
+#trem trims the list numer and the total votes column, what is left is pure data.
+
+trem <- function(x){ #i is the row index
+  x[,-c(1,ncol(x))] %>%
+    return()
+}
+
+# namy removes all the spaces in all cases and convert the numbers into numerical values.
+namy <- function(x){
+  l <- x %>% 
+    select(list)
+  x %>% 
+    select(-list) %>%
+    apply(., 2, str_remove_all, pattern = " ") %>%
+    apply(., 2, as.numeric) %>%
+    as_tibble() %>% 
+    bind_cols(l) %>%
+    return()
+}
+#####
+#####
+# custom functions for custom problems 
+#####
+#####
+# raka_7 combines the names in two rows and and delete the garbage 
+
+raka_7 <- function(x,y,a,b,c){
+  x[b,y] <- paste(x[a,y], x[c,y])
+  x %>% 
+    slice(-a,-c) %>%
+    return()
+}
+
+#diva divides the tibble into a list of tibbles that are homogeneous.
+# this means that we will be working on each problem individually
+a_3tih <- function(x, l){
+  colnames(x) <- l
+  return(x)
+}
+# loma is like les names but for the lists where colnames are the colnames
+loma <- function(ls, n){
+  l <- colnames(ls[[n]])
+  l[15] <- 'list'
+  lapply(ls, a_3tih, l = l) %>% 
+    return()
+}
+
+collage <- function(x){
+  colnames(x) <- letters[1:ncol(x)]
+  x %>% return()
+}
+
+# gad_gad makes two tibbles with the same row count 
+gad_gad <- function(l){
+  while(nrow(l[[1]]) != nrow(l[[2]])){
+    if(nrow(l[[1]]) > nrow(l[[2]])){
+      l[[1]] <- l[[1]][-1,]
+    }
+    if(nrow(l[[1]]) < nrow(l[[2]])){
+      l[[2]] <- l[[2]][-1,]
+    }
+  }
+  return(l)
+}
+```
+
+```{r}
+tables
+```
+
+
+```{r}
+# let's create a list of sets of the data with issues
+lesnoms <- c("bizerte", "ben_arous", "gabes", "kasserine", "mannouba", "nabeul1", "sousse")
+tables_i <- vector(length = 7, mode = "list")
+names(tables_i) <- lesnoms
+```
+
+
+```{r,  eval=FALSE}
+# bizerte
+biz_0 <- tables$`bizerte*`
+
+# remove empty row and columns and top garbge
+biz_1 <- no_empty(biz_0,2)
+
+# set colnames
+biz_2 <- les_names(biz_1, 1)
+
+# trim the list number, and the total list votes (first and last columns)
+biz_3 <- trem(biz_2)
+
+# the issue of rows confusion from 46 to 48
+biz_4 <- raka_7(biz_3,15,46, 47, 48)
+
+# define rows anamolies limitation in a list
+#divide the tibble into various tibbles inside a list
+# make all columns, but the list, numeric
+biz_5 <- namy(biz_4)
+
+# bindcols or rows.
+
+```
+
+```{r}
+# we can cleanly run this 
+tables_i$bizerte <- tables$bizerte %>% # we can also use the bizerte file and we wont have to use rakka_7 function.
+  no_empty(2) %>%
+  trem() %>%
+  les_names(1) %>%
+  #raka_7(15,46,47,48) %>%
+  namy() 
+# DONE.!
+```
+
+```{r}
+# for some reason java tabula couldn't parse the last column from 10 to 21, I had to manually manipulate it with libre calc.
+ba_sec <- tables$`ben-Arous-sec`
+
+rows <- list(1:12, 13:24, 25:55)
+
+ba <- lapply(rows, slice, .data = tables$`ben-Arous`) 
+
+ba[[2]] <- ba_sec  
+
+tables_i$ben_arous <- ba %>%
+  lapply(., remove_empty, "cols") %>%
+  lapply(., collage) %>%
+  reduce(bind_rows) %>% 
+  slice(3:n()) %>% 
+  trem() %>% 
+  les_names(1) %>% 
+  namy()
+```
+
+```{r}
+# processing gabes
+tables_i$gabes <- tables$gabes %>% 
+  no_empty(1) %>% 
+  trem %>% 
+  les_names(1) %>%
+  namy() 
+
+# it's done.
+
+```
+
+```{r}
+# I need to recheck with the original CSV of kasserine.
+
+kas_0 <- tables$kasserine
+
+# the index of rows with issues.
+
+rows <- list(1:9, 10:21, 22:57, 58:70)
+
+tables_i$kasserine <- lapply(rows, slice, .data = kas_0) %>%
+  lapply(., no_empty, 0) %>%
+  loma(., 1) %>%
+  lapply(., trem) %>% 
+  lapply(., namy) %>% 
+  reduce(bind_rows)
+```
+
+
+```{r}
+nab1_0 <- tables$`nabeu1*` %>% 
+  no_empty(1)  
+
+rows <- list(1:27, 28:38)
+
+tables_i$nabeul1 <- lapply(rows, slice, .data = nab1_0) %>%
+  lapply(., remove_empty, "cols") %>% 
+  lapply(., collage) %>% 
+  lapply(., trem) %>%
+  reduce(bind_rows) %>% 
+  les_names(1) %>% 
+  namy() 
+
+## done.
+```
+
+```{r}
+sou_0 <- tables$`sousse*` 
+rows <- list(1:46, 47:93)
+tables_i$sousse <- lapply(rows, slice, .data = sou_0) %>% 
+  gad_gad() %>%
+  reduce(bind_cols) %>% 
+  no_empty(2) %>% 
+  trem() %>%
+  les_names(1) %>%
+  namy()
+# DONE.!
+```
+
+```{r}
+tables$`mannouba*` %>% view
+
+rows <- list(1:16, 17:66)
+man_1 <- tables$`mannouba*` 
+
+tables_i$mannouba <- lapply(rows, slice, .data = man_1) %>%
+  lapply(., remove_empty, "cols") %>%
+  lapply(., collage) %>%
+  reduce(bind_rows) %>%
+  trem() %>%
+  no_empty(1) %>%
+  les_names(1) %>%
+  namy() 
+
+# DONE.!
+```
+
+get another list without the treated lists above.
+save the treated tables.
+treat the rest of the tables in bulk.
+save the whole data.
+
+```{r}
+nope <- c("bizerte", "gabes", "kasserine", "nabeu1*", "mannouba*", "sousse*", "ben-Arous", "ben-Arous-sec")
+tables_1 <- tables[names(tables) %in% nope == F]
+```
+
+```{r}
+tables_1 <- tables_1 %>%
+  lapply(., no_empty, n = 2) %>%
+  lapply(., trem) %>%
+  lapply(., les_names, u = 1) %>%
+  lapply(., namy)
+```
+
+```{r}
+new_tables <- append(tables_1, tables_i)
+names(new_tables)
+```
+
+All I got to do now is to figure the benArous data problem.
+# DONE.!
+
+```{r}
+new_path <- "~/Rprojects/elections/final_data/"
+final_names <- names(new_tables) %>% as.list()
+paste(new_path, final_names[1], ".csv", sep = "")
+x <- vector(27, mode = "list")
+
+for(i in 1:27){
+  new_tables[[i]] %>%
+    write_csv(paste(new_path, final_names[[i]], ".csv", sep = ""))
+}
+
+```
+
+
+
+
+
