@@ -83,10 +83,11 @@ def prep(df):
 ### Phase: Define and prepare  Hare quota arguments
 Hare quota is the number of all votes in given city divided by the number of seats for that city. 
 Based on the HQ we will create a table where we have:
-- electoral quota for each list: Q = 1 means list gets 1 seat etc.
-- seats collected fully by the votes quota, quota seats: QS.
-- remains R from the quota: votes who didn't got any seats to the list.
-- percentage P of the votes of the list from all votes.
+
+  - electoral quota for each list: Q = 1 means list gets 1 seat etc.
+  - seats collected fully by the votes quota, quota seats: QS.
+  - remains R from the quota: votes who didn't got any seats to the list.
+  - percentage P of the votes of the list from all votes.
 
 
 ```{python}
