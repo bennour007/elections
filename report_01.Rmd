@@ -17,11 +17,11 @@ I mean honestly, most of the problems I ran into were related to low quality dat
 
 Basically what took me too long was the fact that I was really confused in this project with R, relearning python and cleaning the rust out of my memory was really time consuming, even though I still need to do lots of work in order to upgrade my coding skills and algorithmic thinking, in addition some tweaks may be needed to make the code not only functional the way it is now, but also, elegant and optimal.
 
-Now that I am more comfortable in the pythonic world of dunamism and ease, *THE COMMUNITY REALLY NEEDS TO FIND A WAY TO MIMIC RMD*. while this entire websire is written in Rmd with Rstudio, I haven't come cross any reporting tool as elegant, and pertinent as Rmd and the knitr package in R. 
+Now that I am more comfortable in the pythonic world of dynamism and ease, *THE COMMUNITY REALLY NEEDS TO FIND A WAY TO MIMIC RMD*. while this entire website is written in Rmd with Rstudio, I haven't come cross any reporting tool as elegant, and pertinent as Rmd and the knitr package in R. 
 
 In what follows we will discuss some functionalities, some methodology and define few concepts for the reader who has no experience in the given matter.
 
-I will not show all the code I used in this report however it will be here in my rep, for those who are going to check it out please leave me a feedback.
+I will not show all the code I used in this report however it will be [here](https://github.com/bennour007/elections) in my rep, for those who are going to check it out please leave me a feedback.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -46,12 +46,12 @@ I will be dividing the work into phases, each phase will be focusing on a specif
 This is important for the Importing phase to loop on them when we need to access all the files and get all the names.
 
 ```{python include=FALSE}
-dirs = glob.glob('/home/bennour/Projects/elections/super_final_data/*.csv')
+dirs = glob.glob('/home/bennour/Projects/my_repos/elections/super_final_data/*.csv')
 ```
 
 
 ```{python include=FALSE}
-fnames = os.listdir('/home/bennour/Projects/elections/super_final_data')
+fnames = os.listdir('/home/bennour/Projects/my_repos/elections/super_final_data')
 names = [os.path.splitext(fnames[i])[0] for i in range(27)]
 ```
 
@@ -69,8 +69,7 @@ dfs = dict(zip(names, list(dfs.values())))
 
 ### Phase : Create a preperation function
 
-We Have to prepare the data in 'dfs' to get the total votes for each list, however this is not the only thing that we need to do, we also have to define which depend on the quota calculation process.
-
+We Have to prepare the data in 'dfs' to get the total votes for each list,
 
 ```{python}
 # this function takes the dataframe sums row wise for each candidate 
